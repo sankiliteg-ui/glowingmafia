@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ANNU Glow Game</title>
+    <style>
+        :root {
+            --primary: #FF69B4; /* Hot Pink */
+            --gold: #FFD700;    /* Gold */
+            --cyan: #00FFFF;    /* Cyan */
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            /* Fix for full screen on Android */
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            /* Elegant dark gradient */
+            background: radial-gradient(circle at center, #1a1a2e 0%, #000000 90%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* --- Stylish Scoreboard --- */
+        #score-board {
+            position: absolute;
+            top: 25px;
+            /* Glassmorphism effect */
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            letter-spacing: 1px;
+            z-index: 50;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #score {
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 20px;
+            margin-left: 5px;
+        }
+
+        /* --- Center Profile Section --- */
+        .centerpiece {
+            position: relative;
+            z-index: 10; /* Ensures photo stays ABOVE balls */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* Allows clicks to pass through transparent areas */
+        }
+
+        .profile-img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .profile-name {
+            font-size: 3em;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.8);
+            margin: 15px 0 5px 0;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+        }
+
+        /* --- Smaller, Cleaner Instructions --- */
+        .instruction-pill {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: floatUp 3s infinite ease-in-out;
+        }
+
+        .instruction-text {
+            font-size: 14px; /* Small size as requested */
+            color: #ccc;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .instruction-text span {
+            color: var(--cyan);
+        }
+
+        /* --- Animations --- */
+        @keyframes floatUp {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* Power Up State */
+        .power-active .profile-img {
+            transform: scale(1.1);
+            border-color: #fff;
+            box-shadow: 0 0 50px var(--gold), 0 0 80px var(--primary);
+        }
+        .power-active .profile-name {
+            -webkit-text-stroke: 0px;
+            color: white;
+            text-shadow: 0 0 20px var(--gold), 0 0 40px var(--cyan);
+        }
+
+        /* --- Game Elements (Balls) --- */
+        .orb {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            /* Balls are strictly BEHIND the center image (z-index < 10) */
+            z-index: 5; 
+            cursor: pointer;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3);
+            /* Improved touch target for mobile */
+            touch-action: manipulation;
+        }
+        
+        /* Inner shine for 3D look */
+        .orb::after {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px;
+            width: 15px; height: 15px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+
+        /* Compliment Text */
+        .compliment {
+            position: absolute;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            z-index: 20;
+            pointer-events: none;
+            white-space: nowrap;
+            animation: textFloat 1.2s ease-out forwards;
+        }
+
+        @keyframes textFloat {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -80px) scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="score-board">GLOW POWER <span id="score">0</span></div>
+
+        <div class="centerpiece" id="center-zone">
+            <img src="ann.jpg" alt="Annu" class="profile-img">
+            <h1 class="profile-name">ANNU</h1>
+            
+            <div class="instruction-pill">
+                <span class="instruction-text">👆 Tap <span>Lights</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const scoreEl = document.getElementById('score');
+        const centerZone = document.getElementById('center-zone');
+        
+        let score = 0;
+        const colors = [
+            '#FF1493', // Deep Pink
+            '#00BFFF', // Deep Sky Blue
+            '#FFD700', // Gold
+            '#FF4500', // Orange Red
+            '#9370DB'  // Purple
+        ];
+
+        const words = ["✨Angel✨", "💖Cute💖", "👑Queen👑", "😻Pretty😻", "🌟Wow🌟"];
+
+        // Function to check if a position is too close to the center (Face)
+        function isTooCloseToCenter(x, y) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            // Calculate distance between random point and center
+            const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            
+            // 150px radius is the "No Fly Zone" (keeps balls away from face)
+            return dist < 155; 
+        }
+
+        function createOrb() {
+            const orb = document.createElement('div');
+            orb.classList.add('orb');
+
+            // Pick color
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            orb.style.background = color;
+            orb.style.boxShadow = `0 0 20px ${color}`;
+
+            // --- SMART POSITIONING ---
+            let x, y, safetyCheck = 0;
+            
+            // Try to find a spot that is NOT on the face
+            // We give it 20 tries to find a good spot.
+            do {
+                x = Math.random() * (window.innerWidth - 60);
+                y = Math.random() * (window.innerHeight - 60);
+                safetyCheck++;
+            } while (isTooCloseToCenter(x + 30, y + 30) && safetyCheck < 20);
+
+            orb.style.left = `${x}px`;
+            orb.style.top = `${y}px`;
+
+            // Movement logic
+            const duration = 3 + Math.random() * 3; // Slower, smoother float
+            orb.style.transition = `top ${duration}s ease-in-out, left ${duration}s ease-in-out`;
+            
+            // Move loop
+            setTimeout(() => {
+                const newX = Math.random() * (window.innerWidth - 60);
+                const newY = Math.random() * (window.innerHeight - 60);
+                orb.style.left = `${newX}px`;
+                orb.style.top = `${newY}px`;
+            }, 100);
+
+            // Interaction Handler
+            const handleTap = (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Stop click from hitting anything else
+
+                // Update Score
+                score += 50;
+                scoreEl.innerText = score;
+
+                // 1. Trigger Glow
+                centerZone.classList.add('power-active');
+                setTimeout(() => centerZone.classList.remove('power-active'), 500);
+
+                // 2. Show Compliment
+                showCompliment(e.touches ? e.touches[0].clientX : e.clientX, 
+                               e.touches ? e.touches[0].clientY : e.clientY);
+
+                // 3. Remove & Respawn
+                orb.remove();
+                setTimeout(createOrb, 200); // Small delay before new one
+            };
+
+            orb.addEventListener('touchstart', handleTap, {passive: false});
+            orb.addEventListener('click', handleTap);
+
+            container.appendChild(orb);
+
+            // Auto remove if not clicked
+            setTimeout(() => {
+                if(orb.parentElement) {
+                    orb.remove();
+                    createOrb();
+                }
+            }, duration * 1000);
+        }
+
+        function showCompliment(x, y) {
+            const el = document.createElement('div');
+            el.classList.add('compliment');
+            el.innerText = words[Math.floor(Math.random() * words.length)];
+            el.style.left = x + 'px';
+            el.style.top = (y - 50) + 'px';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+
+        // Start Loop
+        createOrb();
+        setTimeout(createOrb, 800);
+        setTimeout(createOrb, 1600);
+
+    </script>
+</body>
+</html>
